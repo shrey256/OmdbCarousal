@@ -1,7 +1,6 @@
 package com.chalo.assignments.omdbcarousal.home.home
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import androidx.activity.viewModels
@@ -42,13 +41,21 @@ class HomeActivity : AppCompatActivity() {
 
     private fun initViews(){
         viewBinding.vpCarousal.adapter = adapter
+
+        viewBinding.ivError.setOnClickListener {
+            fetchMedia()
+        }
     }
 
     private fun fetchMedia(){
         viewModel.searchMedia("new").observe(this
         ) {
-            Log.d("HomeActivity", "Response received")
-            adapter.addAll(it)
+            it.response?.let { list ->
+                adapter.addAll(list)
+            }
+            it.error?.let { error ->
+                viewBinding.tvError.text = "$error.errorMessage\n(Tap icon to retry)"
+            }
         }
 
         lifecycleScope.launch {
@@ -57,14 +64,17 @@ class HomeActivity : AppCompatActivity() {
                     HomeViewModel.HomeState.STATE_LOADING -> {
                         viewBinding.pbLoader.visibility = View.VISIBLE
                         viewBinding.ivError.visibility = View.GONE
+                        viewBinding.tvError.visibility = View.GONE
                     }
                     HomeViewModel.HomeState.STATE_ERROR -> {
                         viewBinding.pbLoader.visibility = View.GONE
                         viewBinding.ivError.visibility = View.VISIBLE
+                        viewBinding.tvError.visibility = View.VISIBLE
                     }
                     HomeViewModel.HomeState.STATE_SUCCESS  -> {
                         viewBinding.pbLoader.visibility = View.GONE
                         viewBinding.ivError.visibility = View.GONE
+                        viewBinding.tvError.visibility = View.GONE
                     }
                 }
             }

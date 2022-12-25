@@ -5,7 +5,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalo.assignments.omdbcarousal.home.repository.HomeRepository
+import com.chalo.assignments.omdbcarousal.home.repository.NetworkUtils
 import com.chalo.assignments.omdbcarousal.home.repository.models.Media
+import com.chalo.assignments.omdbcarousal.home.repository.models.ResponseError
+import com.chalo.assignments.omdbcarousal.home.repository.models.ResponseWrapper
 import com.chalo.assignments.omdbcarousal.home.repository.models.SearchResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,13 +19,15 @@ import javax.inject.Inject
 
 class HomeViewModel @Inject constructor(private val repository: HomeRepository) : ViewModel() {
 
-    private val mediaList: MutableLiveData<List<Media>> = MutableLiveData()
+    private val mediaList: MutableLiveData<ResponseWrapper<List<Media>>> = MutableLiveData()
     private val uiStateFlow = MutableStateFlow(HomeState.STATE_LOADING)
 
-    fun searchMedia(searchString: String): LiveData<List<Media>>{
-        mediaList.value?.let {
-            if(it.isNotEmpty()){
-                return mediaList
+    fun searchMedia(searchString: String): LiveData<ResponseWrapper<List<Media>>>{
+        mediaList.value?.let { responseWrapper ->
+            responseWrapper.response?.let {
+                if(it.isNotEmpty()){
+                    return mediaList
+                }
             }
         }
         viewModelScope.launch (Dispatchers.IO){
@@ -33,16 +38,18 @@ class HomeViewModel @Inject constructor(private val repository: HomeRepository) 
             }
             catch (exception: Exception){
                 uiStateFlow.value = HomeState.STATE_ERROR
+                mediaList.postValue(ResponseWrapper(null, ResponseError(exception.message ?: NetworkUtils.ERROR_GENERIC)))
             }
             call?.let {
                 if(it.isSuccessful){
                     uiStateFlow.emit(HomeState.STATE_SUCCESS)
                     it.body()?.let {  response ->
-                        mediaList.postValue(response.Search)
+                        mediaList.postValue(ResponseWrapper(response.Search, null))
                     }
                 }
                 else{
                     uiStateFlow.emit(HomeState.STATE_ERROR)
+                    mediaList.postValue(ResponseWrapper(null, ResponseError(NetworkUtils.ERROR_GENERIC)))
                 }
             }
         }
