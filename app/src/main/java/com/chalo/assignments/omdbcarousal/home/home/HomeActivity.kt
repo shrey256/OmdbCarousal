@@ -62,7 +62,7 @@ class HomeActivity : AppCompatActivity() {
 
 
     private fun fetchMedia(){
-        viewModel.searchMedia("fersfefmeoifjrf").observe(this
+        viewModel.searchMedia("christmas").observe(this
         ) {
             it.response?.let { list ->
                 if(list.size > MAX_LIST_SIZE) {
