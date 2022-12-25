@@ -8,6 +8,7 @@ object NetworkUtils {
     const val CACHE_DIR = "http-cache"
     const val CACHE_SIZE: Long = 10 * 1024 * 1024; // 10 MiB
     const val ERROR_GENERIC = "Something went wrong"
+    const val MAX_LIST_SIZE = 5
 
 
 }

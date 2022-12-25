@@ -7,11 +7,15 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.viewpager2.widget.ViewPager2
+import com.chalo.assignments.omdbcarousal.R
 import com.chalo.assignments.omdbcarousal.databinding.ActivityHomeBinding
 import com.chalo.assignments.omdbcarousal.home.OmdbCarousalApplication
+import com.chalo.assignments.omdbcarousal.home.repository.NetworkUtils.MAX_LIST_SIZE
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.abs
 
 class HomeActivity : AppCompatActivity() {
 
@@ -25,6 +29,13 @@ class HomeActivity : AppCompatActivity() {
 
     private val viewModel by viewModels<HomeViewModel> { viewModelFactory }
 
+    private val pageTransformer = ViewPager2.PageTransformer { page, position ->
+        page.apply {
+            val r = 1 - abs(position)
+            page.scaleY = 0.75f + r * 0.25f
+            page.scaleX = 0.75f + r * 0.25f
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,17 +52,32 @@ class HomeActivity : AppCompatActivity() {
 
     private fun initViews(){
         viewBinding.vpCarousal.adapter = adapter
+        viewBinding.vpCarousal.setPageTransformer(pageTransformer)
 
+        
         viewBinding.ivError.setOnClickListener {
             fetchMedia()
         }
     }
 
+    private fun showEmptyView(){
+        viewBinding.tvError.text = getString(R.string.empty_list)
+        viewBinding.tvError.visibility = View.VISIBLE
+    }
+
     private fun fetchMedia(){
-        viewModel.searchMedia("new").observe(this
+        viewModel.searchMedia("christmas").observe(this
         ) {
             it.response?.let { list ->
-                adapter.addAll(list)
+                if(list.isEmpty()){
+                    showEmptyView()
+                }
+                else if(list.size > MAX_LIST_SIZE) {
+                    adapter.addAll(list.subList(0, MAX_LIST_SIZE))
+                }
+                else{
+                    adapter.addAll(list)
+                }
             }
             it.error?.let { error ->
                 viewBinding.tvError.text = "$error.errorMessage\n(Tap icon to retry)"

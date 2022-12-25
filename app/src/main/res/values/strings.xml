@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">OmdbCarousal</string>
+    <string name="empty_list">No Items Found!</string>
 </resources>
