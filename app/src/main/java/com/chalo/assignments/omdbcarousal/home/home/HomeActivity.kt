@@ -60,19 +60,12 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    private fun showEmptyView(){
-        viewBinding.tvError.text = getString(R.string.empty_list)
-        viewBinding.tvError.visibility = View.VISIBLE
-    }
 
     private fun fetchMedia(){
-        viewModel.searchMedia("christmas").observe(this
+        viewModel.searchMedia("fersfefmeoifjrf").observe(this
         ) {
             it.response?.let { list ->
-                if(list.isEmpty()){
-                    showEmptyView()
-                }
-                else if(list.size > MAX_LIST_SIZE) {
+                if(list.size > MAX_LIST_SIZE) {
                     adapter.addAll(list.subList(0, MAX_LIST_SIZE))
                 }
                 else{
@@ -101,6 +94,12 @@ class HomeActivity : AppCompatActivity() {
                         viewBinding.pbLoader.visibility = View.GONE
                         viewBinding.ivError.visibility = View.GONE
                         viewBinding.tvError.visibility = View.GONE
+                    }
+                    HomeViewModel.HomeState.STATE_EMPTY -> {
+                        viewBinding.pbLoader.visibility = View.GONE
+                        viewBinding.tvError.text = getString(R.string.empty_list)
+                        viewBinding.tvError.visibility = View.VISIBLE
+                        viewBinding.ivError.visibility = View.GONE
                     }
                 }
             }

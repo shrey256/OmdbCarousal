@@ -44,7 +44,10 @@ class HomeViewModel @Inject constructor(private val repository: HomeRepository) 
                 if(it.isSuccessful){
                     uiStateFlow.emit(HomeState.STATE_SUCCESS)
                     it.body()?.let {  response ->
-                        mediaList.postValue(ResponseWrapper(response.Search ?: ArrayList(), null))
+                        if(response.Search == null || response.Search.isEmpty()){
+                            uiStateFlow.emit(HomeState.STATE_EMPTY)
+                        }
+                        mediaList.postValue(ResponseWrapper(response.Search, null))
                     }
                 }
                 else{
@@ -63,7 +66,8 @@ class HomeViewModel @Inject constructor(private val repository: HomeRepository) 
     enum class HomeState{
         STATE_LOADING,
         STATE_ERROR,
-        STATE_SUCCESS
+        STATE_SUCCESS,
+        STATE_EMPTY
     }
 
 }
