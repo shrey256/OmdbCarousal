@@ -13,13 +13,8 @@ import com.chalo.assignments.omdbcarousal.R
 import com.chalo.assignments.omdbcarousal.databinding.ActivityHomeBinding
 import com.chalo.assignments.omdbcarousal.home.OmdbCarousalApplication
 import com.chalo.assignments.omdbcarousal.home.repository.NetworkUtils.MAX_LIST_SIZE
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 import kotlin.math.abs
 import kotlin.time.Duration
@@ -50,11 +45,16 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    private val pageTouchListener = object: View.OnTouchListener{
-        override fun onTouch(p0: View?, p1: MotionEvent?): Boolean {
-            TODO("Not yet implemented")
+    private val pageTouchListener = View.OnTouchListener { _, motionEvent ->
+        when (motionEvent?.action) {
+            MotionEvent.ACTION_UP -> {
+                launchSlideShow()
+            }
+            MotionEvent.ACTION_DOWN -> {
+                job?.cancel()
+            }
         }
-
+        false
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,16 +84,7 @@ class HomeActivity : AppCompatActivity() {
             if(adapter.itemCount > 0){
                 var index = 0
                 while(index < adapter.itemCount){
-                    viewBinding.vpCarousal.getChildAt(index)?.setOnTouchListener { _, motionEvent -> when (motionEvent?.action) {
-                        MotionEvent.ACTION_UP -> {
-                            launchSlideShow()
-                        }
-                        MotionEvent.ACTION_DOWN -> {
-                            job?.cancel()
-                        }
-                    }
-                    return@setOnTouchListener false
-                    }
+                    viewBinding.vpCarousal.getChildAt(index)?.setOnTouchListener (pageTouchListener)
                     index++
                 }
             }
@@ -155,7 +146,18 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        job?.cancel()
         launchSlideShow()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        job?.cancel()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        job?.cancel()
     }
 
     private fun launchSlideShow(){
