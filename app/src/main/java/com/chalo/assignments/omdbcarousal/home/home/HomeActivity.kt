@@ -50,16 +50,11 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    private val pageTouchListener = View.OnTouchListener { _, motionEvent ->
-        when (motionEvent?.action) {
-            MotionEvent.ACTION_UP -> {
-                launchSlideShow()
-            }
-            MotionEvent.ACTION_DOWN -> {
-                job?.cancel()
-            }
+    private val pageTouchListener = object: View.OnTouchListener{
+        override fun onTouch(p0: View?, p1: MotionEvent?): Boolean {
+            TODO("Not yet implemented")
         }
-        false
+
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,7 +84,16 @@ class HomeActivity : AppCompatActivity() {
             if(adapter.itemCount > 0){
                 var index = 0
                 while(index < adapter.itemCount){
-                    viewBinding.vpCarousal.getChildAt(index)?.setOnTouchListener (pageTouchListener)
+                    viewBinding.vpCarousal.getChildAt(index)?.setOnTouchListener { _, motionEvent -> when (motionEvent?.action) {
+                        MotionEvent.ACTION_UP -> {
+                            launchSlideShow()
+                        }
+                        MotionEvent.ACTION_DOWN -> {
+                            job?.cancel()
+                        }
+                    }
+                    return@setOnTouchListener false
+                    }
                     index++
                 }
             }
