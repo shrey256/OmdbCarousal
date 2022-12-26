@@ -2,6 +2,7 @@ package com.chalo.assignments.omdbcarousal.home.home
 
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -12,10 +13,18 @@ import com.chalo.assignments.omdbcarousal.R
 import com.chalo.assignments.omdbcarousal.databinding.ActivityHomeBinding
 import com.chalo.assignments.omdbcarousal.home.OmdbCarousalApplication
 import com.chalo.assignments.omdbcarousal.home.repository.NetworkUtils.MAX_LIST_SIZE
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.abs
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
 class HomeActivity : AppCompatActivity() {
 
@@ -28,6 +37,10 @@ class HomeActivity : AppCompatActivity() {
     private lateinit var viewBinding: ActivityHomeBinding
 
     private val viewModel by viewModels<HomeViewModel> { viewModelFactory }
+
+    private var job: Job? = null
+
+    private val slideInterval = 5.seconds
 
     private val pageTransformer = ViewPager2.PageTransformer { page, position ->
         page.apply {
@@ -53,10 +66,30 @@ class HomeActivity : AppCompatActivity() {
     private fun initViews(){
         viewBinding.vpCarousal.adapter = adapter
         viewBinding.vpCarousal.setPageTransformer(pageTransformer)
-
         
         viewBinding.ivError.setOnClickListener {
             fetchMedia()
+        }
+    }
+
+    private fun initViewpagerTouchListeners(){
+        viewBinding.vpCarousal.post {
+            if(adapter.itemCount > 0){
+                var index = 0
+                while(index < adapter.itemCount){
+                    viewBinding.vpCarousal.getChildAt(index)?.setOnTouchListener { _, motionEvent -> when (motionEvent?.action) {
+                        MotionEvent.ACTION_UP -> {
+                            launchSlideShow()
+                        }
+                        MotionEvent.ACTION_DOWN -> {
+                            job?.cancel()
+                        }
+                    }
+                    return@setOnTouchListener false
+                    }
+                    index++
+                }
+            }
         }
     }
 
@@ -71,6 +104,8 @@ class HomeActivity : AppCompatActivity() {
                 else{
                     adapter.addAll(list)
                 }
+                initViewpagerTouchListeners()
+                launchSlideShow()
             }
             it.error?.let { error ->
                 viewBinding.tvError.text = "$error.errorMessage\n(Tap icon to retry)"
@@ -106,6 +141,33 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        job?.cancel()
+    }
 
+    override fun onResume() {
+        super.onResume()
+        launchSlideShow()
+    }
+
+    private fun launchSlideShow(){
+        if(adapter.itemCount == 0){
+            return
+        }
+        job = tickerFlow(slideInterval, slideInterval).onEach {
+            viewBinding.vpCarousal.setCurrentItem(((viewBinding.vpCarousal.currentItem + 1) % adapter.itemCount), true)
+        }.launchIn(lifecycleScope)
+    }
+
+
+    @OptIn(ExperimentalTime::class)
+    private fun tickerFlow(period: Duration, initialDelay: Duration) = flow {
+        delay(initialDelay)
+        while (true) {
+            emit(Unit)
+            delay(period)
+        }
+    }
 
 }
