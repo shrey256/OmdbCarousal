@@ -50,6 +50,18 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
+    private val pageTouchListener = View.OnTouchListener { _, motionEvent ->
+        when (motionEvent?.action) {
+            MotionEvent.ACTION_UP -> {
+                launchSlideShow()
+            }
+            MotionEvent.ACTION_DOWN -> {
+                job?.cancel()
+            }
+        }
+        false
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -77,16 +89,7 @@ class HomeActivity : AppCompatActivity() {
             if(adapter.itemCount > 0){
                 var index = 0
                 while(index < adapter.itemCount){
-                    viewBinding.vpCarousal.getChildAt(index)?.setOnTouchListener { _, motionEvent -> when (motionEvent?.action) {
-                        MotionEvent.ACTION_UP -> {
-                            launchSlideShow()
-                        }
-                        MotionEvent.ACTION_DOWN -> {
-                            job?.cancel()
-                        }
-                    }
-                    return@setOnTouchListener false
-                    }
+                    viewBinding.vpCarousal.getChildAt(index)?.setOnTouchListener (pageTouchListener)
                     index++
                 }
             }
